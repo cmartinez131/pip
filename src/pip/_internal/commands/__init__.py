@@ -43,6 +43,10 @@ commands_dict = OrderedDict([
         'pip._internal.commands.show', 'ShowCommand',
         'Show information about installed packages.',
     )),
+    ('provides', CommandInfo(
+        'pip._internal.commands.provides', 'ProvidesCommand',
+        'Given a file, outputs what package provides that file.',
+    )),
     ('check', CommandInfo(
         'pip._internal.commands.check', 'CheckCommand',
         'Verify installed packages have compatible dependencies.',
