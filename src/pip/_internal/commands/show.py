@@ -9,7 +9,7 @@ from pip._vendor.packaging.utils import canonicalize_name
 
 from pip._internal.cli.base_command import Command
 from pip._internal.cli.status_codes import ERROR, SUCCESS
-from pip._internal.utils.misc import write_output
+from pip._internal.utils.misc import write_output, get_file_list
 
 logger = logging.getLogger(__name__)
 
@@ -87,25 +87,13 @@ def search_packages_info(query):
             'requires': [dep.project_name for dep in dist.requires()],
             'required_by': get_requiring_packages(dist.project_name)
         }
-        file_list = None
         metadata = ''
         if isinstance(dist, pkg_resources.DistInfoDistribution):
             # RECORDs should be part of .dist-info metadatas
-            if dist.has_metadata('RECORD'):
-                lines = dist.get_metadata_lines('RECORD')
-                paths = [line.split(',')[0] for line in lines]
-                paths = [os.path.join(dist.location, p) for p in paths]
-                file_list = [os.path.relpath(p, dist.location) for p in paths]
-
             if dist.has_metadata('METADATA'):
                 metadata = dist.get_metadata('METADATA')
         else:
             # Otherwise use pip's log for .egg-info's
-            if dist.has_metadata('installed-files.txt'):
-                paths = dist.get_metadata_lines('installed-files.txt')
-                paths = [os.path.join(dist.egg_info, p) for p in paths]
-                file_list = [os.path.relpath(p, dist.location) for p in paths]
-
             if dist.has_metadata('PKG-INFO'):
                 metadata = dist.get_metadata('PKG-INFO')
 
@@ -134,9 +122,7 @@ def search_packages_info(query):
             if line.startswith('Classifier: '):
                 classifiers.append(line[len('Classifier: '):])
         package['classifiers'] = classifiers
-
-        if file_list:
-            package['files'] = sorted(file_list)
+        package['files'] = get_file_list(dist)
         yield package
 
 

@@ -33,6 +33,7 @@ from typing import (
     TypeVar,
     cast,
 )
+from pip._vendor import pkg_resources
 
 from pip._vendor.pkg_resources import Distribution
 from pip._vendor.tenacity import retry, stop_after_delay, wait_fixed
@@ -81,6 +82,24 @@ def get_pip_version():
         pip_pkg_dir,
         get_major_minor_version(),
     )
+
+def get_file_list(dist):
+    file_list = []
+    if isinstance(dist, pkg_resources.DistInfoDistribution):
+            # RECORDs should be part of .dist-info metadatas
+        if dist.has_metadata('RECORD'):
+            lines = dist.get_metadata_lines('RECORD')
+            paths = [line.split(',')[0] for line in lines]
+            paths = [os.path.join(dist.location, p) for p in paths]
+            file_list = [os.path.relpath(p, dist.location) for p in paths]
+    else:
+            # Otherwise use pip's log for .egg-info's
+        if dist.has_metadata('installed-files.txt'):
+            paths = dist.get_metadata_lines('installed-files.txt')
+            paths = [os.path.join(dist.egg_info, p) for p in paths]
+            file_list = [os.path.relpath(p, dist.location) for p in paths]
+    return sorted(file_list)
+
 
 
 def normalize_version_info(py_version_info):

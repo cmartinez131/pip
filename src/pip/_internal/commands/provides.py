@@ -1,6 +1,14 @@
+from pathlib import Path
+import os
+from email.parser import FeedParser
+from pip._vendor import pkg_resources
+from pip._vendor.packaging.utils import canonicalize_name
+
+from pip._internal.cli import cmdoptions
 from pip._internal.cli.base_command import Command
 from pip._internal.cli.status_codes import ERROR, SUCCESS
 from pip._internal.metadata import BaseDistribution, get_environment
+from pip._internal.utils.misc import get_file_list
 
 class ProvidesCommand(Command):
     """
@@ -13,56 +21,49 @@ class ProvidesCommand(Command):
       %prog [options] <package> ..."""
     def add_options(self):
         # type: () -> None
+ 
         self.cmd_opts.add_option(
-            '-o', '--outdated',
-            action='store_true',
-            default=False,
-            help='List outdated packages')
-        self.cmd_opts.add_option(
-            '-u', '--uptodate',
-            action='store_true',
-            default=False,
-            help='List uptodate packages')
-        self.cmd_opts.add_option(
-            '-f', '--files',
-            dest='files',
-            action='store_true',
-            default=False,
-            help='Show the full list of installed files for each package.')
+            '--format',
+            action='store',
+            dest='list_format',
+            default="columns",
+            choices=('columns', 'freeze', 'json'),
+            help="Select the output format among: columns (default), freeze, "
+                 "or json",
+            )
 
         self.parser.insert_option_group(0, self.cmd_opts)
 
     def run(self, options, args):   #args type -> list of stings
-        owning_package = False
-        for filename in args:
-            owning_package = get_owning_pacakge(filename) #apackage name or none
-            if owning_package:
-                print("file is owned by {}".format(filename, owning_package)
-        return SUCCESS
+######HERE
+
+##        package = {
+##            'name': dist.project_name,
+##            'version': dist.version,
+##            'location': dist.location,
+##            'requires': [dep.project_name for dep in dist.requires()],
+##            'required_by': get_requiring_packages(dist.project_name)
+##            'clasifiers': ... 
+##            'file': ... maybe
+##            'metadata-version
+##        }
+        for arg in args: #args -> list of filename or absolute 
+            for dist in pkg_resources.working_set:
+                installed_file_list = get_file_list(dist)
+                package = {
+                    'name': dist.project_name,
+                    'version': dist.version,
+                    'location': dist.location,
+                    'requires': [dep.project_name for dep in dist.requires()],
+                    #'files': get_file_list(dist)
+                    #'required_by': get_requiring_packages(dist.project_name)
+                    }
+                for filename in installed_file_list:
+                    path = Path(package['location']).joinpath(filename)
+                    abs_path = path.resolve()
+                    if arg == str(abs_path):
+                        print(arg, "comes from the", package['name'], "package")
+                    elif arg in filename:
+                        print(arg, "is in", abs_path)                    
+        return SUCCESS      
     
-
-def get_owning_package(filename):  #still need to get owning pacakge
-    
-    packages = [        #gets name of all packages installed
-            d           #from show.py
-            for d in get_environment(options.path).iter_installed_distributions(
-                local_only=options.local,
-                user_only=options.user,
-                editables_only=options.editable,
-                include_editables=options.include_editable,
-                skip=skip,
-            )
-        ]
-
-    for package in packages:
-        package_info = search_package_info([package])
-        for filename in package_info["Files"]:
-        if filename == pacakge_info["Files"]:
-            return package
-    return None
-
-
-def search_package_info(package):
-    return files  
-
-
