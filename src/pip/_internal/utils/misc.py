@@ -84,7 +84,7 @@ def get_pip_version():
     )
 
 def get_file_list(dist):
-    file_list = []
+    file_list = None
     if isinstance(dist, pkg_resources.DistInfoDistribution):
             # RECORDs should be part of .dist-info metadatas
         if dist.has_metadata('RECORD'):
@@ -98,7 +98,8 @@ def get_file_list(dist):
             paths = dist.get_metadata_lines('installed-files.txt')
             paths = [os.path.join(dist.egg_info, p) for p in paths]
             file_list = [os.path.relpath(p, dist.location) for p in paths]
-    return sorted(file_list)
+    if file_list:
+        return sorted(file_list)
 
 
 

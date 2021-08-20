@@ -122,7 +122,9 @@ def search_packages_info(query):
             if line.startswith('Classifier: '):
                 classifiers.append(line[len('Classifier: '):])
         package['classifiers'] = classifiers
+
         package['files'] = get_file_list(dist)
+
         yield package
 
 
